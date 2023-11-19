@@ -3,7 +3,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
-
+from turtlesim.srv import SetPen
 
 
 class koch_snow(Node):
@@ -22,6 +22,25 @@ class koch_snow(Node):
     # New method for koch_snow
     def cb_pose(self, msg):
         self.pose = msg
+
+    def set_pen(self, r, g, b, width, off):
+        pen_client = self.create_client(SetPen, '/turtle1/set_pen')
+        while not pen_client.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('set_pen szolgáltatás nem elérhető, várakozás...')
+            self.get_logger().info('set_pen szolgáltatás elérhető.')
+
+        req = SetPen.Request()
+        req.r = r
+        req.g = g
+        req.b = b
+        req.width = width
+        req.off = off
+        future = pen_client.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        if future.result() is not None:
+            self.get_logger().info('Toll beállítva.')
+        else:
+            self.get_logger().error('Hiba történt a toll beállításakor.')
 
     def go_straight(self, speed, distance):
         while self.pose is None and rclpy.ok():
@@ -132,6 +151,9 @@ class koch_snow(Node):
             P=P+180
             self.turn(omega, P)
             self.help=0
+    def set_spawnpoint(self, x, y):
+        self.set_pen(0, 0, 0, 0, 1)
+
 
     def draw_koch(self, speed, omega, I, L):
         if I==0:
@@ -148,6 +170,7 @@ class koch_snow(Node):
 def main(args=None):
     rclpy.init(args=args)
     ks = koch_snow()
+    ks.set_spawnpoint()
     ks.draw_koch(3.0,400.0,1,1)
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
