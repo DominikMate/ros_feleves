@@ -85,7 +85,7 @@ class koch_snow(Node):
 
 
     def turn(self, omega, angle):
-        ANGLE_TOLERANCE = math.radians(0.5)
+        ANGLE_TOLERANCE = math.radians(0.4)
         omega_rad = math.radians(omega)
 
         while self.pose is None and rclpy.ok():
@@ -151,10 +151,28 @@ class koch_snow(Node):
             P=P+180
             self.turn(omega, P)
             self.help=0
-    def set_spawnpoint(self, x, y):
+    def set_spawnpoint(self, speed, omega, x, y):
         self.set_pen(0, 0, 0, 0, 1)
+        # Wait for position to be received
+        loop_rate = self.create_rate(100, self.get_clock()) # Hz
+        while self.pose is None and rclpy.ok():
+            self.get_logger().info('Waiting for pose...')
+            rclpy.spin_once(self)
 
+        # Stuff with atan2
+        x0 = self.pose.x
+        y0 = self.pose.y
+        theta_0 = math.degrees(self.pose.theta)
 
+        theta_1 = math.degrees(math.atan2(y-y0, x-x0))
+        angle = theta_1 - theta_0
+        distance = math.sqrt(((x - x0) * (x - x0)) + (y - y0) * (y - y0))
+
+        # Execute movement
+        self.turn(omega, angle)
+        self.go_straight(speed, distance)
+
+        self.set_pen(255, 255, 255, 1, 0)
     def draw_koch(self, speed, omega, I, L):
         if I==0:
             self.go_straight(speed, L)
@@ -170,8 +188,11 @@ class koch_snow(Node):
 def main(args=None):
     rclpy.init(args=args)
     ks = koch_snow()
-    ks.set_spawnpoint()
-    ks.draw_koch(3.0,400.0,1,1)
+    ks.set_spawnpoint(5.0,500.0,2,7)
+    ks.turn(500, -155)
+    for k in range(3):
+        ks.draw_koch(1.0,600.0,2,0.2)
+        ks.turn(500, -120)
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
