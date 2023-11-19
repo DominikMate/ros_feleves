@@ -6,10 +6,10 @@ from turtlesim.msg import Pose
 
 
 
-class TurtlesimController(Node):
+class koch_snow(Node):
 
     def __init__(self):
-        super().__init__('turtlesim_controller')
+        super().__init__('koch_snow')
         self.twist_pub = self.create_publisher(
                             Twist, '/turtle1/cmd_vel', 10)
         self.pose = None
@@ -19,7 +19,7 @@ class TurtlesimController(Node):
             self.cb_pose,
             10)
 
-    # New method for TurtlesimController
+    # New method for koch_snow
     def cb_pose(self, msg):
         self.pose = msg
 
@@ -134,28 +134,25 @@ class TurtlesimController(Node):
             self.help=0
 
     def draw_koch(self, speed, omega, I, L):
-        self.P=0
-        if I==1:
-            for i in range(3):
-                self.go_straight(speed, L)
-                self.turn(omega, 120)
+        if I==0:
+            self.go_straight(speed, L)
         else:
-            self.help=0
-            for i in range(3):
-                x=L*(1/3)**(I-1)
-                for j in range((4**(I-2))):
-                    self.koch_subfunc(speed, omega, I, x, self.P, self.help)
-                #P=P+120
-                #self.turn(omega, self.P)
-        #for j in range()
+            self.draw_koch(speed, omega, I-1, L)
+            self.turn(omega, 60)
+            self.draw_koch(speed, omega, I-1, L)
+            self.turn(omega, -120)
+            self.draw_koch(speed, omega, I-1, L)
+            self.turn(omega, 60)
+            self.draw_koch(speed, omega, I-1, L)
 
 def main(args=None):
     rclpy.init(args=args)
-    tc = TurtlesimController()
+    ks = koch_snow()
+    ks.draw_koch(3.0,400.0,1,1)
     # Destroy the node explicitly
     # (optional - otherwise it will be done automatically
     # when the garbage collector destroys the node object)
-    tc.destroy_node()
+    ks.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
